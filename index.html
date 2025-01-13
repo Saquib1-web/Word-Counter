@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Counter</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f2f5;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            margin: 0;
+            color: #1a1a1a;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .stat-box {
+            background: white;
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            background: #3498db;
+            color: white;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #2980b9;
+        }
+
+        button:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+        }
+
+        .time-input {
+            padding: 8px;
+            width: 60px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 300px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            resize: vertical;
+            font-size: 16px;
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+
+        @media (max-width: 600px) {
+            .controls {
+                flex-direction: column;
+            }
+            .time-input {
+                width: 100%;
+            }
+        }
+
+        .copy-btn {
+            background: #27ae60;
+        }
+
+        .copy-btn:hover {
+            background: #219a52;
+        }
+
+        .clear-btn {
+            background: #e74c3c;
+        }
+
+        .clear-btn:hover {
+            background: #c0392b;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Word Counter</h1>
+        </div>
+
+        <div class="stats">
+            <div class="stat-box">
+                <div class="stat-label">Words</div>
+                <div class="stat-value" id="wordCount">0</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Characters</div>
+                <div class="stat-value" id="charCount">0</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Timer</div>
+                <div class="stat-value" id="timer">5:00</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <input type="number" id="timeInput" class="time-input" value="5" min="1" max="60">
+            <button id="startBtn">Start</button>
+            <button id="pauseBtn" disabled>Pause</button>
+            <button id="resetBtn">Reset</button>
+            <button id="copyBtn" class="copy-btn">Copy Text</button>
+            <button id="clearBtn" class="clear-btn">Clear</button>
+        </div>
+
+        <textarea id="textInput" placeholder="Start typing here..."></textarea>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const textInput = document.getElementById('textInput');
+            const wordCountDisplay = document.getElementById('wordCount');
+            const charCountDisplay = document.getElementById('charCount');
+            const timerDisplay = document.getElementById('timer');
+            const timeInput = document.getElementById('timeInput');
+            const startBtn = document.getElementById('startBtn');
+            const pauseBtn = document.getElementById('pauseBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const copyBtn = document.getElementById('copyBtn');
+            const clearBtn = document.getElementById('clearBtn');
+
+            let timer;
+            let timeLeft;
+            let isPaused = true;
+
+            function countWords(text) {
+                return text.trim() ? text.trim().split(/\s+/).length : 0;
+            }
+
+            function updateCounts() {
+                const text = textInput.value;
+                wordCountDisplay.textContent = countWords(text);
+                charCountDisplay.textContent = text.length;
+            }
+
+            function formatTime(seconds) {
+                const minutes = Math.floor(seconds / 60);
+                const remainingSeconds = seconds % 60;
+                return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+            }
+
+            function updateTimer() {
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    timeLeft = 0;
+                    isPaused = true;
+                    startBtn.disabled = false;
+                    pauseBtn.disabled = true;
+                    timeInput.disabled = false;
+                    alert('Time is up!');
+                }
+                timerDisplay.textContent = formatTime(timeLeft);
+            }
+
+            function startTimer() {
+                if (isPaused) {
+                    if (timeLeft <= 0) {
+                        timeLeft = timeInput.value * 60;
+                    }
+                    isPaused = false;
+                    startBtn.disabled = true;
+                    pauseBtn.disabled = false;
+                    timeInput.disabled = true;
+                    timer = setInterval(() => {
+                        timeLeft--;
+                        updateTimer();
+                    }, 1000);
+                }
+            }
+
+            function pauseTimer() {
+                clearInterval(timer);
+                isPaused = true;
+                startBtn.disabled = false;
+                pauseBtn.disabled = true;
+            }
+
+            function resetTimer() {
+                clearInterval(timer);
+                timeLeft = timeInput.value * 60;
+                isPaused = true;
+                startBtn.disabled = false;
+                pauseBtn.disabled = true;
+                timeInput.disabled = false;
+                updateTimer();
+            }
+
+            async function copyText() {
+                try {
+                    await navigator.clipboard.writeText(textInput.value);
+                    alert('Text copied to clipboard!');
+                } catch (err) {
+                    alert('Failed to copy text. Please select and copy manually.');
+                }
+            }
+
+            function clearContent() {
+                if (confirm('Are you sure you want to clear all content?')) {
+                    textInput.value = '';
+                    updateCounts();
+                }
+            }
+
+            // Event listeners
+            textInput.addEventListener('input', updateCounts);
+            startBtn.addEventListener('click', startTimer);
+            pauseBtn.addEventListener('click', pauseTimer);
+            resetBtn.addEventListener('click', resetTimer);
+            copyBtn.addEventListener('click', copyText);
+            clearBtn.addEventListener('click', clearContent);
+            timeInput.addEventListener('change', () => {
+                if (isPaused) {
+                    timeLeft = timeInput.value * 60;
+                    updateTimer();
+                }
+            });
+
+            // Initialize
+            timeLeft = timeInput.value * 60;
+            updateTimer();
+        });
+    </script>
+</body>
+</html>
